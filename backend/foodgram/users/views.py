@@ -10,7 +10,9 @@ from rest_framework.views import APIView
 
 from api.pagination import PageLimitPagination
 from .models import Follow, User
-from .serializers import FollowSerializer, PasswordSerializer, TokenSerializer, UserSerializer
+from .serializers import (AuthorSerializer, FollowSerializer, 
+                          PasswordSerializer, TokenSerializer, 
+                          UserSerializer)
 
 
 
@@ -29,22 +31,27 @@ class UserViewSet(CreateViewSet):
     pagination_class =PageLimitPagination
     permission_classes = (AllowAny,)
     
+    def get_serializer_class(self):
+        if self.action == 'retrieve':
+            return AuthorSerializer
+        return UserSerializer
+
     @action(
         detail=False,
-        methods=['GET',],
+        methods=['GET'],
         permission_classes=(IsAuthenticated,)
     )
     def me(self, request):
-        serializer = UserSerializer(request.user)
+        serializer = AuthorSerializer(request.user)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
     @action(
         detail=False,
-        methods=['POST',],
+        methods=['POST'],
         permission_classes=(IsAuthenticated,)
     )
     def set_password(self, request):
-        serializer = PasswordSerializer
+        serializer = PasswordSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = self.request.user
         password = serializer.validated_data.get('current_password')
@@ -120,35 +127,3 @@ class TokenCreateView(views.TokenCreateView):
             data=token_serializer_class(token).data,
             status=status.HTTP_201_CREATED
         )
-
-
-def get_token_for_user(user):
-    token = Token.objects.create(user=user)
-    return {
-        'auth_token': str(token.key),
-    }
-
-
-@api_view(['POST'])
-@permission_classes([AllowAny])
-def get_token(request):
-    serializer = TokenSerializer(data=request.data)
-    serializer.is_valid(raise_exception=True)
-    user = get_object_or_404(
-        User,
-        email=request.data.get('email')
-    )
-    if user.password == request.data.get('password'):
-        return Response(
-            get_token_for_user(user),
-            status=status.HTTP_201_CREATED
-        )
-    return Response(status=status.HTTP_400_BAD_REQUEST)
-
-
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def delete_token(request):
-    user = request.user
-    user.auth_token.delete()
-    return Response(status=status.HTTP_204_NO_CONTENT)

@@ -1,4 +1,3 @@
-from wsgiref import validate
 from django.db import models
 from django.core.validators import MinValueValidator
 
@@ -76,13 +75,13 @@ class Recipe(models.Model):
     is_favorited = models.ManyToManyField(
         User,
         through='Favorite',
-        related_name='favorites',
+        related_name='is_favorited',
         verbose_name='Избранное'
     )
     is_in_shopping_cart = models.ManyToManyField(
         User,
         through='ShoppingCart',
-        related_name='shopping_cart',
+        related_name='is_in_shopping_cart',
         verbose_name='Корзина покупок'
     )
     pub_date = models.DateTimeField(

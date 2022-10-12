@@ -5,9 +5,9 @@ from rest_framework.routers import DefaultRouter
 
 from .views import TokenCreateView, UserViewSet
 
-router = DefaultRouter()
+router_v1 = DefaultRouter()
 
-router.register('users', UserViewSet, basename='users')
+router_v1.register('users', UserViewSet, basename='users')
 
 auth = [
     path('login/', TokenCreateView.as_view(), name='login'),
@@ -16,6 +16,6 @@ auth = [
 
 
 urlpatterns = [
-    path('v1/', include(router.urls)),
-    path('v1/auth/token/', include(auth)),
+    path('', include(router_v1.urls)),
+    path('token/', include(auth)),
 ]
