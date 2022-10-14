@@ -3,20 +3,23 @@ from django.db import models
 
 
 class User(AbstractUser):
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['username']
+
     username = models.CharField(
         max_length=150,
         unique=True,
         null=True,
         verbose_name='Имя пользователя'
     )
+    password = models.CharField(
+        max_length=150,
+        verbose_name='Пароль'
+    )
     email = models.EmailField(
         max_length=254,
         unique=True,
         verbose_name='Электронная почта'
-    )
-    password = models.CharField(
-        max_length=150,
-        verbose_name='Пароль'
     )
     first_name = models.CharField(
         max_length=150,
@@ -52,8 +55,6 @@ class Follow(models.Model):
         return f'{self.user} - {self.following}'
 
     class Meta:
-        verbose_name = 'Подписка'
-        verbose_name_plural = 'Подписки'
         constraints = [
             models.UniqueConstraint(
                 fields=['user', 'following'],

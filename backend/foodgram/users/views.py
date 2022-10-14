@@ -27,8 +27,7 @@ class CreateViewSet(
 
 class UserViewSet(CreateViewSet):
     queryset = User.objects.all()
-    serializer_class = UserSerializer
-    pagination_class =PageLimitPagination
+    pagination_class = PageLimitPagination
     permission_classes = (AllowAny,)
     
     def get_serializer_class(self):
@@ -38,7 +37,6 @@ class UserViewSet(CreateViewSet):
 
     @action(
         detail=False,
-        methods=['GET'],
         permission_classes=(IsAuthenticated,)
     )
     def me(self, request):
@@ -53,14 +51,11 @@ class UserViewSet(CreateViewSet):
     def set_password(self, request):
         serializer = PasswordSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        user = self.request.user
-        password = serializer.validated_data.get('current_password')
-        new_password = serializer.validated_data.get('new_password')
-        if user.password != password:
-            raise exceptions.ValidationError('Неверный пароль')
-        user.password = new_password
-        user.save(update_fields=['password'])
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        if request.user.check_password(request.data.get('current_password')):
+            request.user.set_password(request.data.get('new_password'))
+            request.user.save()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(status=status.HTTP_401_UNAUTHORIZED)
 
     @action(
         detail=False,
@@ -68,55 +63,52 @@ class UserViewSet(CreateViewSet):
         permission_classes=(IsAuthenticated,)
     )
     def subscriptions(self, request):
-        follows = request.user.follower.all()
-        page = self.paginate_queryset(follows)
-        if page is not None:
-            serializer = FollowSerializer(
-                page,
-                many=True,
-                context=self.get_serializer_context()
-            )
-            return self.get_paginated_response(serializer.data)
+        queryset = Follow.objects.filter(
+            user=request.user
+        ).select_related('following')
         serializer = FollowSerializer(
-            follows,
+            self.paginate_queryset(queryset),
             many=True,
-            context=self.get_serializer_context()
+            context={'request': request}
         )
-        return Response(serializer.data)
+        return self.get_paginated_response(serializer.data)
 
-
-class FollowView(APIView):
-    def get_serializer_context(self):
-        return {
-            'format': self.format_kwarg,
-            'request': self.request,
-            'view': self            
-        }
-
-    def post(self, request, *args, **kwargs):
-        following_id = self.kwargs.get('pk')
-        following = get_object_or_404(User, id=following_id)
-        user = request.user
-        try:
-            follow = Follow.objects.create(
-                user=user,
-                following=following
+    @action(
+        methods=['POST', 'DELETE'],
+        detail=True,
+        permission_classes=(IsAuthenticated,)
+    )
+    def subscribe(self, request, pk):
+        author = get_object_or_404(User, id=pk)
+        if request.method == 'POST':
+            if request.user == author:
+                return Response(
+                    {'errors': 'Подписаться на себя невозможно'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            subscription, created = Follow.objects.get_or_create(
+                user=request.user, following=author
             )
-        except Exception:
-            response = {'errors': 'Подписаться невозможно!'}
-            return Response(response, status=status.HTTP_400_BAD_REQUEST)
-        serializer = FollowSerializer(
-            follow,
-            context=self.get_serializer_context()
+            if not created:
+                return Response(
+                    {'errors': 'Вы уже подписаны'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            serializer = FollowSerializer(subscription)
+            return Response(
+                serializer.data,
+                status=status.HTTP_201_CREATED
+            )
+        subscription = Follow.objects.filter(
+            user=request.user, following=author
         )
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-    def delete(self, request, *args, **kwargs):
-        objects = request.user.follower.all()
-        following_id = self.kwargs.get('pk')
-        following = get_object_or_404(User, id=following_id)
-        objects.filter(following=following).delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        if subscription:
+            subscription.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(
+            {'errors': 'На этого полльзователя вы не подписаны'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
 
 class TokenCreateView(views.TokenCreateView):

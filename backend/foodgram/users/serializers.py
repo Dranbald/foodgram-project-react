@@ -15,8 +15,7 @@ class UserSerializer(serializers.ModelSerializer):
             'username',
             'first_name',
             'last_name',
-            'password',
-            'is_subscribed'
+            'password'
         )
 
     def create(self, validated_data):
@@ -29,7 +28,7 @@ class UserSerializer(serializers.ModelSerializer):
 
 class AuthorSerializer(UserSerializer):
     is_subscribed = serializers.SerializerMethodField(
-        method_name='subscription'
+        method_name='get_is_subscribed'
     )
 
     class Meta(UserSerializer.Meta):
@@ -43,17 +42,16 @@ class AuthorSerializer(UserSerializer):
             'is_subscribed'
         )
 
-    def subscription(self, instance):
-        try:
-            user = self.context['request'].user
-        except Exception:
-            user = instance
-        author = instance
-        try:
+    def get_is_subscribed(self, obj):
+        if (
+            self.context.get('request') is not None
+            and self.context.get('request').user.is_authenticated
+        ):
             return Follow.objects.filter(
-                user=user, following=author).exists()
-        except Exception:
-            return False
+                user=self.context.get('request').user,
+                following=obj
+            ).exists()
+        return False
 
 
 class FollowSerializer(serializers.ModelSerializer):
@@ -66,28 +64,28 @@ class FollowSerializer(serializers.ModelSerializer):
     recipes = serializers.SerializerMethodField()
     recipes_count = serializers.SerializerMethodField()
     
-    def subscription(self, obj):
+    def get_is_subscribed(self, obj):
         return Follow.objects.filter(
                 user=obj.user,
-                following=obj.author
+                following=obj.following
         ).exists()
 
-    def get_recipe(self, obj):
+    def get_recipes(self, obj):
         from api.serializers import CartSerializer
         if self.context:
             recipes_limit = self.context['request'].GET.get('recipes_limit')
             if recipes_limit:
                 queryset = Recipe.objects.filter(
-                    author=obj.author
+                    author=obj.following
                 )[:int(recipes_limit)]
         else:
             queryset = Recipe.objects.filter(
-                author=obj.author
+                author=obj.following
             )
         return CartSerializer(queryset, many=True).data
 
-    def recipe_count(self, obj):
-        return Recipe.objects.filter(author=obj.author).count()
+    def get_recipes_count(self, obj):
+        return Recipe.objects.filter(author=obj.following).count()
 
     class Meta:
         model = Follow
@@ -95,7 +93,7 @@ class FollowSerializer(serializers.ModelSerializer):
         validators = [
             serializers.UniqueTogetherValidator(
                 queryset=Follow.objects.all(),
-                fields=('user', 'author')
+                fields=('user', 'following')
             )
         ]
 

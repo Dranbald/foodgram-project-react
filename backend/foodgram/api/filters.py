@@ -1,10 +1,12 @@
-from django_filters import (FilterSet, NumberFilter,
+from django.db.models import BooleanField, ExpressionWrapper, Q
+
+from django_filters import (Filter, FilterSet, NumberFilter,
                             ModelMultipleChoiceFilter)
 from recipes.models import Recipe, Tag
 
 class RecipeFilter(FilterSet):
     is_favorited = NumberFilter(
-        method='filter_favorited'
+        method='filter_is_favorited'
     )
     is_in_shopping_cart = NumberFilter(
         method='filter_is_shopping_cart'
@@ -20,16 +22,11 @@ class RecipeFilter(FilterSet):
 
     def filter_is_favorited(self, queryset, name, value):
         if value == 1:
-            return queryset.filter(favorited=self.request.user)
+            return queryset.filter(is_favorited=self.request.user)
 
-    def filter_is_in_shopping_cart(self, queryset, name, value):
+    def filter_is_shopping_cart(self, queryset, name, value):
         if value == 1:
-            return queryset.filter(in_shopping_cart=self.request.user)
-
-    def filter_author(self, queryset, name, value):
-        if value == 'me':
-            return queryset.filter(author=self.request.user)
-        return queryset.filter(author=value)
+            return queryset.filter(is_in_shopping_cart=self.request.user)
 
     class Meta:
         model = Recipe
@@ -39,3 +36,17 @@ class RecipeFilter(FilterSet):
             'author',
             'tags'
         )
+
+
+class IngredientFilter(FilterSet):
+    name = Filter(
+        method='filter_name'
+    )
+
+    def filter_name(self, queryset, name, value):
+        data = queryset.filter(name__contains=value)
+        startswith = ExpressionWrapper(
+            Q(name__startswith=value),
+            output_field=BooleanField()
+        )
+        return data.annotate(startswith=startswith).order_by('-startswith')
