@@ -2,17 +2,15 @@ from django.shortcuts import get_object_or_404
 
 from djoser import utils, views
 from djoser.conf import settings
-from rest_framework import exceptions, mixins, status, viewsets
-from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework import mixins, status, viewsets
+from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.views import APIView
 
 from api.pagination import PageLimitPagination
 from .models import Follow, User
 from .serializers import (AuthorSerializer, FollowSerializer, 
-                          PasswordSerializer, TokenSerializer, 
-                          UserSerializer)
+                          PasswordSerializer, UserSerializer)
 
 
 

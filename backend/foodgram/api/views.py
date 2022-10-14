@@ -4,8 +4,7 @@ from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
-from rest_framework.exceptions import MethodNotAllowed
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from recipes.models import(Favorite, Ingredient, Recipe, RecipeIngredient,
@@ -13,8 +12,8 @@ from recipes.models import(Favorite, Ingredient, Recipe, RecipeIngredient,
 from .filters import IngredientFilter, RecipeFilter
 from .pagination import PageLimitPagination
 from .permissions import IsAuthenticatedAuthorOrReadOnly
-from .serializers import (IngredientSerializer, RecipeSerializer, 
-                          TagSerializer, CartSerializer)
+from .serializers import (IngredientSerializer, ReadRecipeSerializer, 
+                          TagSerializer, CartSerializer, WriteRecipeSerializer)
 
 
 class ListRetrieveViewSet(
@@ -34,20 +33,18 @@ class IngredientViewSet(ListRetrieveViewSet):
 
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
-    serializer_class = RecipeSerializer
     pagination_class = PageLimitPagination
     filter_backends = [DjangoFilterBackend]
     filter_class = RecipeFilter
     permission_classes = [IsAuthenticatedAuthorOrReadOnly]
 
-    def update(self, request, *args, **kwargs):
-        if request.method == 'PUT':
-            raise MethodNotAllowed(request.method)
-        return super().update(request, *args, **kwargs)
+    def get_serializer_class(self):
+        if self.request.method in ['GET']:
+            return ReadRecipeSerializer
+        return WriteRecipeSerializer
 
-    def partial_update(self, request, *args, **kwargs):
-        kwargs['partial'] = False
-        return self.update(request, *args, **kwargs)
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user)
 
     @action(
         methods=['POST', 'DELETE'],
