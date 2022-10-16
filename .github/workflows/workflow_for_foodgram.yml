@@ -38,4 +38,4 @@ jobs:
         with:
           context: backend/foodgram/
           push: true
-          tags: dranbald/foodgram:latest
+          tags: dranbald/foodgram_web:latest
