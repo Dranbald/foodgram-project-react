@@ -1,6 +1,5 @@
-from rest_framework.serializers import ValidationError
-
 from recipes.models import Ingredient
+from rest_framework.serializers import ValidationError
 
 
 def validate_ingredient(ingredients):

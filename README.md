@@ -63,7 +63,7 @@ DB_PORT=5432
 
 ## Заполнение базы данными:
 
-> <sub>  </sub> 
+> <sub> docker-compose exec web python manage.py loaddata dump.json </sub> 
 
 
 ---
