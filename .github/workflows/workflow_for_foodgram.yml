@@ -53,6 +53,7 @@ jobs:
           passphrase: ${{ secrets.PASSPHRASE }} 
           script: |
             sudo docker pull dranbald/foodgram_web:latest
+            sudo docker pull dranbald/foodgram_frontend:latest
             sudo docker-compose stop
             sudo docker-compose rm web
             sudo docker-compose pull
