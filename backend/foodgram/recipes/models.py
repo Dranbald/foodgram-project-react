@@ -1,10 +1,11 @@
-from django.db import models
 from django.core.validators import MinValueValidator
+from django.db import models
 
 from users.models import User
 
 
 class Ingredient(models.Model):
+    """Модель ингредиентов"""
     name = models.CharField(
         max_length=200,
         verbose_name='Наименование'
@@ -17,8 +18,12 @@ class Ingredient(models.Model):
     def __str__(self):
         return f'{self.name} - {self.measurement_unit}'
 
+    class Meta:
+        ordering = ['name']
+
 
 class Tag(models.Model):
+    """Модель тегов для рецептов"""
     name = models.CharField(
         max_length=200,
         unique=True,
@@ -38,8 +43,12 @@ class Tag(models.Model):
     def __str__(self):
         return f'{self.name}'
 
+    class Meta:
+        ordering = ['name']
+
 
 class Recipe(models.Model):
+    """Модель рецепта"""
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
@@ -48,7 +57,8 @@ class Recipe(models.Model):
     )
     name = models.CharField(
         max_length=200,
-        verbose_name='Название'
+        verbose_name='Название',
+        db_index=True
     )
     image = models.ImageField(
         upload_to='recipes/images/',
@@ -68,7 +78,7 @@ class Recipe(models.Model):
     text = models.TextField(
         verbose_name='Описание'
     )
-    cooking_time = models.IntegerField(
+    cooking_time = models.PositiveSmallIntegerField(
         validators=[MinValueValidator(1)],
         verbose_name='Время готовки'
     )
@@ -97,6 +107,7 @@ class Recipe(models.Model):
 
 
 class Favorite(models.Model):
+    """Модель избранного"""
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
@@ -109,7 +120,7 @@ class Favorite(models.Model):
         related_name='favorites',
         verbose_name='Рецепт'
     )
-    
+
     def __str__(self):
         return f'{self.user} добавил {self.recipe} в избранное.'
 
@@ -123,6 +134,7 @@ class Favorite(models.Model):
 
 
 class RecipeIngredient(models.Model):
+    """Модель для ингредиентов в рецепте"""
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
@@ -153,6 +165,7 @@ class RecipeIngredient(models.Model):
 
 
 class ShoppingCart(models.Model):
+    """Модель для списка покупок"""
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
@@ -170,6 +183,7 @@ class ShoppingCart(models.Model):
         return f'{self.recipe} в корзине {self.user}'
 
     class Meta:
+        ordering = ['recipe']
         constraints = [
             models.UniqueConstraint(
                 fields=['user', 'recipe'],

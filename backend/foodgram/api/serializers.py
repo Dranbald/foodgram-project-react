@@ -2,11 +2,13 @@ import base64
 
 from django.core.files.base import ContentFile
 from django.shortcuts import get_object_or_404
-from rest_framework import serializers
+from rest_framework import permissions, serializers
+from rest_framework.decorators import permission_classes
 
-from recipes.models import(Favorite, Ingredient,Recipe, RecipeIngredient,
-                           ShoppingCart, Tag)
+from recipes.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
+                            ShoppingCart, Tag)
 from users.serializers import AuthorSerializer, UserSerializer
+
 from .validatiors import validate_ingredient
 
 
@@ -20,7 +22,7 @@ class Base64ImageField(serializers.ImageField):
 
 
 class IngredientSerializer(serializers.ModelSerializer):
-
+    """Сериализатор для Ингредиентов"""
     class Meta:
         model = Ingredient
         fields = (
@@ -31,6 +33,7 @@ class IngredientSerializer(serializers.ModelSerializer):
 
 
 class RecipeIngredientSerializer(serializers.ModelSerializer):
+    """Сериализатор для ингредиентов в составе рецепта"""
     id = serializers.CharField(
         source='ingredient.id'
     )
@@ -57,7 +60,7 @@ class RecipeIngredientSerializer(serializers.ModelSerializer):
 
 
 class TagSerializer(serializers.ModelSerializer):
-
+    """Сериализатор для тегов"""
     class Meta:
         model = Tag
         fields = (
@@ -75,6 +78,7 @@ class TagsField(serializers.PrimaryKeyRelatedField):
 
 
 class WriteRecipeSerializer(serializers.ModelSerializer):
+    """Сериализатор для создания и редактирования рецептов"""
     author = AuthorSerializer(read_only=True)
     ingredients = serializers.SerializerMethodField(
         method_name='get_ingredients'
@@ -153,9 +157,7 @@ class WriteRecipeSerializer(serializers.ModelSerializer):
         ingredients = self.initial_data.get('ingredients')
         validate_ingredient(ingredients)
         tags = validated_data.pop('tags')
-        instance.name = validated_data.get('name')
-        instance.text = validated_data.get('text')
-        instance.cooking_time = validated_data.get('cooking_time')
+        super().update(instance, validated_data)
         RecipeIngredient.objects.filter(recipe=instance).delete()
         instance.tags.clear()
         for ingredient_data in ingredients:
@@ -175,6 +177,7 @@ class WriteRecipeSerializer(serializers.ModelSerializer):
 
 
 class ReadRecipeSerializer(WriteRecipeSerializer):
+    """Сериализатор для просмотра рецептов"""
     author = UserSerializer(read_only=True)
     tags = TagSerializer(read_only=True, many=True)
 
@@ -195,6 +198,7 @@ class ReadRecipeSerializer(WriteRecipeSerializer):
 
 
 class CartSerializer(serializers.ModelSerializer):
+    """Сериализатор для списка покупок"""
     image = Base64ImageField()
 
     class Meta:
@@ -206,11 +210,10 @@ class CartSerializer(serializers.ModelSerializer):
             'cooking_time'
         )
 
+
+@permission_classes([permissions.IsAuthenticated])
 def favorite_or_shop_cart(self, obj, model):
-    if (
-        self.context.get('request') is not None
-        and self.context.get('request').user.is_authenticated
-    ):
+    if self.context.get('request') is not None:
         return model.objects.filter(
             user=self.context.get('request').user,
             recipe=obj

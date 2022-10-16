@@ -7,7 +7,7 @@ from recipes.models import Ingredient
 
 class Command(BaseCommand):
     """
-    Загружаем ингредиенты в базу из csv файла, 
+    Загружаем ингредиенты в базу из csv файла,
     который располагается в директории /data/
     """
 

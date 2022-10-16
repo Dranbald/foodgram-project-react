@@ -1,8 +1,10 @@
 from django.db.models import BooleanField, ExpressionWrapper, Q
+from django_filters.rest_framework import (Filter, FilterSet,
+                                           ModelMultipleChoiceFilter,
+                                           NumberFilter)
 
-from django_filters import (Filter, FilterSet, NumberFilter,
-                            ModelMultipleChoiceFilter)
 from recipes.models import Recipe, Tag
+
 
 class RecipeFilter(FilterSet):
     is_favorited = NumberFilter(
@@ -23,10 +25,12 @@ class RecipeFilter(FilterSet):
     def filter_is_favorited(self, queryset, name, value):
         if value == 1:
             return queryset.filter(is_favorited=self.request.user)
+        return queryset
 
     def filter_is_shopping_cart(self, queryset, name, value):
         if value == 1:
             return queryset.filter(is_in_shopping_cart=self.request.user)
+        return queryset
 
     class Meta:
         model = Recipe

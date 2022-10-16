@@ -18,7 +18,7 @@ class RecipeAdmin(admin.ModelAdmin):
 
 
 class RecipeIngredientAdmin(admin.ModelAdmin):
-    list_display = ('recipe', 'ingredient')    
+    list_display = ('recipe', 'ingredient')
 
 
 class FavoriteAdmin(admin.ModelAdmin):

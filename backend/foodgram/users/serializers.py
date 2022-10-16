@@ -1,10 +1,12 @@
 from rest_framework import serializers
 
 from recipes.models import Recipe
+
 from .models import Follow, User
 
 
 class UserSerializer(serializers.ModelSerializer):
+    """Сериализатор для модели User"""
     password = serializers.CharField(write_only=True)
 
     class Meta:
@@ -27,6 +29,7 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class AuthorSerializer(UserSerializer):
+    """Сериализатор для автора рецепта"""
     is_subscribed = serializers.SerializerMethodField(
         method_name='get_is_subscribed'
     )
@@ -55,6 +58,7 @@ class AuthorSerializer(UserSerializer):
 
 
 class FollowSerializer(serializers.ModelSerializer):
+    """Сериализатор для подписки на автора"""
     email = serializers.ReadOnlyField(source='following.id')
     id = serializers.ReadOnlyField(source='following.id')
     username = serializers.ReadOnlyField(source='following.username')
@@ -63,11 +67,11 @@ class FollowSerializer(serializers.ModelSerializer):
     is_subscribed = serializers.SerializerMethodField()
     recipes = serializers.SerializerMethodField()
     recipes_count = serializers.SerializerMethodField()
-    
+
     def get_is_subscribed(self, obj):
         return Follow.objects.filter(
-                user=obj.user,
-                following=obj.following
+            user=obj.user,
+            following=obj.following
         ).exists()
 
     def get_recipes(self, obj):
@@ -99,6 +103,7 @@ class FollowSerializer(serializers.ModelSerializer):
 
 
 class PasswordSerializer(serializers.ModelSerializer):
+    """Сериализатор смены пароля от учетной записи"""
     new_password = serializers.CharField(
         required=True,
         max_length=150
@@ -107,7 +112,7 @@ class PasswordSerializer(serializers.ModelSerializer):
         required=True,
         max_length=150
     )
-    
+
     class Meta:
         model = User
         fields = (
@@ -117,6 +122,7 @@ class PasswordSerializer(serializers.ModelSerializer):
 
 
 class TokenSerializer(serializers.ModelSerializer):
+    """Сериализатор для Токена"""
     email = serializers.CharField(
         required=True,
         max_length=150

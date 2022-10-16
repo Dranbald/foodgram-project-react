@@ -1,37 +1,38 @@
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
-
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from recipes.models import(Favorite, Ingredient, Recipe, RecipeIngredient,
-                           ShoppingCart, Tag)
+from recipes.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
+                            ShoppingCart, Tag)
+
 from .filters import IngredientFilter, RecipeFilter
 from .pagination import PageLimitPagination
 from .permissions import IsAuthenticatedAuthorOrReadOnly
-from .serializers import (IngredientSerializer, ReadRecipeSerializer, 
-                          TagSerializer, CartSerializer, WriteRecipeSerializer)
+from .serializers import (CartSerializer, IngredientSerializer,
+                          ReadRecipeSerializer, TagSerializer,
+                          WriteRecipeSerializer)
 
 
-class ListRetrieveViewSet(
-    mixins.ListModelMixin,
-    mixins.RetrieveModelMixin,
-    viewsets.GenericViewSet):
+class ListRetrieveViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin,
+                          viewsets.GenericViewSet):
+
     pass
 
 
 class IngredientViewSet(ListRetrieveViewSet):
+    """Вьюсет для модели Ingredient"""
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_class = IngredientFilter
-    pagination_class = None
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
+    """Вьюсет для создания и редактирования рецептов"""
     queryset = Recipe.objects.all()
     pagination_class = PageLimitPagination
     filter_backends = [DjangoFilterBackend]
@@ -52,7 +53,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         permission_classes=(IsAuthenticated,)
     )
     def shopping_cart(self, request, pk):
-        return create_recipes_list(request, pk, ShoppingCart)
+        return create_or_delete_recipes_list(request, pk, ShoppingCart)
 
     @action(
         methods=['POST', 'DELETE'],
@@ -60,7 +61,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         permission_classes=(IsAuthenticated,)
     )
     def favorite(self, request, pk):
-        return create_recipes_list(request, pk, Favorite)
+        return create_or_delete_recipes_list(request, pk, Favorite)
 
     @action(
         detail=False,
@@ -102,12 +103,14 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
 
 class TagViewSet(ListRetrieveViewSet):
+    """Вьюсет для модели Tag"""
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
     pagination_class = None
 
 
-def create_recipes_list(request, pk, model):
+def create_or_delete_recipes_list(request, pk, model):
+    """Метод для добавления/удаления в избранное и список покупок"""
     recipe = get_object_or_404(Recipe, id=pk)
     if request.method == 'POST':
         obj, created = model.objects.get_or_create(

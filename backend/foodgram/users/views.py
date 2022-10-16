@@ -1,5 +1,4 @@
 from django.shortcuts import get_object_or_404
-
 from djoser import utils, views
 from djoser.conf import settings
 from rest_framework import mixins, status, viewsets
@@ -8,10 +7,10 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 from api.pagination import PageLimitPagination
-from .models import Follow, User
-from .serializers import (AuthorSerializer, FollowSerializer, 
-                          PasswordSerializer, UserSerializer)
 
+from .models import Follow, User
+from .serializers import (AuthorSerializer, FollowSerializer,
+                          PasswordSerializer, UserSerializer)
 
 
 class CreateViewSet(
@@ -24,10 +23,11 @@ class CreateViewSet(
 
 
 class UserViewSet(CreateViewSet):
+    """Вьюсет для модели User"""
     queryset = User.objects.all()
     pagination_class = PageLimitPagination
     permission_classes = (AllowAny,)
-    
+
     def get_serializer_class(self):
         if self.action == 'retrieve':
             return AuthorSerializer
@@ -40,7 +40,7 @@ class UserViewSet(CreateViewSet):
     def me(self, request):
         serializer = AuthorSerializer(request.user)
         return Response(serializer.data, status=status.HTTP_200_OK)
-    
+
     @action(
         detail=False,
         methods=['POST'],
@@ -57,7 +57,7 @@ class UserViewSet(CreateViewSet):
 
     @action(
         detail=False,
-        methods=['GET',],
+        methods=['GET'],
         permission_classes=(IsAuthenticated,)
     )
     def subscriptions(self, request):
@@ -110,6 +110,7 @@ class UserViewSet(CreateViewSet):
 
 
 class TokenCreateView(views.TokenCreateView):
+    """Вьюсет для генерации Токена"""
     def _action(self, serializer):
         token = utils.login_user(self.request, serializer.user)
         token_serializer_class = settings.SERIALIZERS.token

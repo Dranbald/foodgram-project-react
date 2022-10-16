@@ -3,6 +3,7 @@ from django.db import models
 
 
 class User(AbstractUser):
+    """Модель пользователя"""
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username']
 
@@ -38,6 +39,7 @@ class User(AbstractUser):
 
 
 class Follow(models.Model):
+    """Модель подписки на автора"""
     user = models.ForeignKey(
         User,
         related_name='user',
@@ -55,6 +57,7 @@ class Follow(models.Model):
         return f'{self.user} - {self.following}'
 
     class Meta:
+        ordering = ['following']
         constraints = [
             models.UniqueConstraint(
                 fields=['user', 'following'],
