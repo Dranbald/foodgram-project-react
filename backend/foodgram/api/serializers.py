@@ -212,9 +212,10 @@ class CartSerializer(serializers.ModelSerializer):
 
 @permission_classes([permissions.IsAuthenticated])
 def favorite_or_shop_cart(self, obj, model):
-    if self.context.get('request') is not None:
-        return model.objects.filter(
+    try: 
+        model.objects.filter(
             user=self.context.get('request').user,
             recipe=obj
         ).exists()
-    return False
+    except Exception:
+        return False

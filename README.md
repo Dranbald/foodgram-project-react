@@ -72,3 +72,5 @@ DB_PORT=5432
 [Захаров Данил](https://github.com/Dranbald) - backend, студент Яндекс Практикум.
 
 [Яндекс.Практикум](https://github.com/yandex-praktikum) - frontend.
+
+Login Django-admin 
