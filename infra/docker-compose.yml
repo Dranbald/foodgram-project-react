@@ -2,7 +2,9 @@ version: '3.8'
 services:
 
   frontend:
-    image: dranbald/foodgram_frontend:latest
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
     volumes:
       - ../frontend/:/app/result_build/
 
@@ -14,7 +16,9 @@ services:
       - ./.env
 
   web:
-    image: dranbald/foodgram_web:latest
+    build:
+      context: ../backend/foodgram
+      dockerfile: Dockerfile
     restart: always
     volumes:
       - static_value:/app/static/

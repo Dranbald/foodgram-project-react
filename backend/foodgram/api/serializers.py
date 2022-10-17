@@ -4,8 +4,7 @@ from django.core.files.base import ContentFile
 from django.shortcuts import get_object_or_404
 from recipes.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
                             ShoppingCart, Tag)
-from rest_framework import permissions, serializers
-from rest_framework.decorators import permission_classes
+from rest_framework import serializers
 from users.serializers import AuthorSerializer, UserSerializer
 
 from .validatiors import validate_ingredient
@@ -210,12 +209,11 @@ class CartSerializer(serializers.ModelSerializer):
         )
 
 
-@permission_classes([permissions.IsAuthenticated])
 def favorite_or_shop_cart(self, obj, model):
-    try: 
-        model.objects.filter(
-            user=self.context.get('request').user,
-            recipe=obj
-        ).exists()
-    except Exception:
+    user = self.context.get('request').user
+    if user.is_anonymous:
         return False
+    return model.objects.filter(
+        user=user,
+        recipe=obj.id
+    ).exists()
