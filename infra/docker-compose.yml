@@ -17,7 +17,7 @@ services:
     image: dranbald/foodgram_web:latest
     restart: always
     volumes:
-      - static_value:/static_backend/static/
+      - static_value:/app/static/
       - media_value:/app/media/
     depends_on:
       - db

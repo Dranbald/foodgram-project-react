@@ -12,8 +12,8 @@ class RecipeFilter(FilterSet):
     is_in_shopping_cart = NumberFilter(
         method='filter_is_shopping_cart'
     )
-    author = NumberFilter(
-        field_name='filter_author'
+    author = Filter(
+        method='filter_author'
     )
     tags = ModelMultipleChoiceFilter(
         queryset=Tag.objects.all(),
@@ -30,6 +30,11 @@ class RecipeFilter(FilterSet):
         if value == 1:
             return queryset.filter(is_in_shopping_cart=self.request.user)
         return queryset
+
+    def filter_author(self, queryset, name, value):
+        if value == 'me':
+            return queryset.filter(author=self.request.user)
+        return queryset.filter(author=value)
 
     class Meta:
         model = Recipe
