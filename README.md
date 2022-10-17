@@ -73,4 +73,5 @@ DB_PORT=5432
 
 [Яндекс.Практикум](https://github.com/yandex-praktikum) - frontend.
 
-Login Django-admin 
+Login Django-admin - Dranbald@yandex.ru
+Password - 121212
